@@ -23,7 +23,10 @@ OBS类内：
 read_decision负责读的顺序<br>
 write函数负责写操作<br>
 del函数负责删除操作<br>
+相关数据结构定义：
 unread结构体负责处理未读对象<br>
 read结构体负责处理读需求对象<br>
+emptyspace/plocate:用于在存储时进行分配具体的位置（标记连续段）<br>
+Case存储事件信息，Disk存储磁盘信息（包含空余位置以及指针位置等）<br>
 readInput\writeInput\delInput负责与判题器的交互处理<br>
 如有任何问题，联系邮箱:b22051510@njupt.edu.cn
