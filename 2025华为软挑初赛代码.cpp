@@ -13,7 +13,7 @@
 //负载均衡的问题
 // using namespace std;
 //std::ios::sync_with_stdio(false);
-//std::cin.tie(nullptr);
+//std::cin.tie(nullptr);//异步读
 //control:beginusestrategy=14400/controldelay=10/tagaliveperiod=20/bestdecisionread=100
 long int T;
 short int M,N;
@@ -392,17 +392,7 @@ class OBS
 			};
 		//std::vector<int>un;
 		int total=D[x].ReadytoRead.size();
-		//std::sort(D[x].ReadytoRead.begin(),D[x].ReadytoRead.end());
-		/*for(int i=0;i<total;i++)
-		{
-
-				std::cout<<"Current diskpointer: "<<D[x].curdiskpointer<<"\n";
-			std::cout<<"Check read:"<<D[x].ReadytoRead[i].queryid<<" "<<D[x].ReadytoRead[i].caseid<<" "<<cs[D[x].ReadytoRead[i].caseid].totalreadvalue<<" "<<D[x].ReadytoRead[i].start<<"\n";
-		}*///use in debug
-		//dpstate dp[2*G+1][total];
-		//std::vector<std::vector<dpstate>>dp(2*G+1,std::vector<dpstate>(total));
 		dpstate dp[G+1];
-        //memcpy(dp,sizeof(dp),0);
 		dp[0].lastread=-1;
 		dp[0].profit=0;
 		dp[0].action="";
@@ -410,50 +400,8 @@ class OBS
 		dp[0].readcontinuous=D[x].continuousread;
 		dp[0].state=beginarr;
 		dp[G].action="";
-		/*if(D[x].lastmove!='r')
-		{
-		dp[0].lastread=-1;
-		}
-		else
-		{
-			dp[0].lastread=(D[x].curdiskpointer<D[x].continuousread)*V+D[x].curdiskpointer-D[x].continuousread;
-		}*/
 		//could consider slope optimization in dp- cost函数是凸函数
 		//dp consideration or search optimize
-		/*
-	    for(int i=1;i<=G;i++)
-		{
-			//if j start from dp[i-1].lastread+1?
-			for(int j=0;j<total;j++)
-			{
-			dp[i][j]=dp[i-1][j];
-			int chosen=-1;
-		       for(int k=0;k<j;k++)
-				{
-				int cost=dpreadcost(k,j).re;
-				if(i>=cost)
-				{
-					dp[i][j].profit=std::max(dp[i][j].profit,dp[i-cost][j].profit+getCaseIndex(getDiskIndex(x).ReadytoRead[k].caseid).totalreadvalue);
-					if(dp[i][j].profit==dp[i-cost][j].profit+getCaseIndex(getDiskIndex(x).ReadytoRead[k].caseid).totalreadvalue)
-					{
-						chosen=k;
-					}
-				}
-				}
-				if(chosen>-1)
-			{
-				//std::cout<<i<<" "<<dpreadcost(dp[i-1].lastread,chosen).re<<"\n";
-				dp[i][j].action=dp[i-dpreadcost(j,chosen).re][j].action+(dpreadcost(j,chosen).st);
-				//dp[i][j].state=dp[i-dpreadcost(j,chosen).re][j].state+(1<<chosen);
-				dp[i][j].state=dp[i-dpreadcost(j,chosen).re].state;
-				dp[i][j].state.push_back(chosen);
-				//dp[i][j].state=dp[i-dpreadcost(j,chosen).re].state;
-				//dp[i][j].state.push_back(chosen);
-				dp[i][j].lastread=chosen;
-			}
-			}
-		}
-		*/
 		//管理0-1背包，如何将物品存入，记录状态，每个物品只能取一次
 		//考虑集合dp
 		/*for(int i=1;i<=G;i++)
@@ -552,152 +500,11 @@ class OBS
 			getCaseIndex(D[x].ReadytoRead[i].caseid).read=false;
 		    
 		}
-		//greedy select method.
-		/*int selectid=0,totalcost=0,lastread=-1,currentdiskpointer=D[x].curdiskpointer,lastreadcontinuous=D[x].continuousread;
-		auto greedyreadselection=[](const read &rda,const read &rdb)
-		{
-		if(abs(getCaseIndex(rda.caseid).totalreadvalue*exp(-rda.deltoaccept)-getCaseIndex(rdb.caseid).totalreadvalue*exp(-rdb.deltoaccept))<eps)
-			{
-				return rda.readstart+readsizecost[std::min(9,rda.Size)]+std::max(0,rda.Size-9)*16<rdb.readstart+readsizecost[std::min(9,rdb.Size)]+std::max(0,rdb.Size-9)*16;
-			}
-			return getCaseIndex(rda.caseid).totalreadvalue*exp(-rda.deltoaccept)>getCaseIndex(rdb.caseid).totalreadvalue*exp(-rdb.deltoaccept);
-		};
-		//std::priority_queue<read,std::vector<read>,decltype(greedyreadselection)>Decisiontoread(greedyreadselection);
-		std::vector<read>Choosetoreadselection;
-		int mincost=D[x].ReadytoRead[0].readstart-D[x].curdiskpointer+readsizecost[std::min(9,D[x].ReadytoRead[0].Size)]+std::max(0,D[x].ReadytoRead[0].Size-9)*16;
-		for(long int i=0;i<total;i++)
-		{
-			D[x].ReadytoRead[i].readturn=i;
-			mincost=std::min(mincost,D[x].ReadytoRead[0].readstart-D[x].curdiskpointer+readsizecost[std::min(9,D[x].ReadytoRead[0].Size)]+std::max(0,D[x].ReadytoRead[0].Size-9)*16);
-		}
-		auto checkisplacable=[x,dpreadcost](std::vector<read> *Choosetoreadselection,int *totalcost,int asknum)//if one cost need to add to the queue-sort in arrangement.
-		{
-		  int l=0,r=(*Choosetoreadselection).size()-1,bigsize=r+1;
-		  int selectplace=0;
-		  long int mid;
-	      if(!(*Choosetoreadselection).empty())
-		  {
-		  while(l<r)
-		  {
-		  	mid=(l+r)/2;
-		  	if((*Choosetoreadselection)[mid].readstart>D[x].ReadytoRead[asknum].readstart)
-		  	{
-		  	r=mid-1;	
-			}
-			else
-			{
-				l=mid;
-			}
-		  };
-		  selectplace=l;
-		  }
-		  //mid=l;
-		  //selectplace=mid+((*Choosetoreadselection)[mid].readstart<D[x].ReadytoRead[asknum].readstart);}
-		  returnstate rt,rq,origin;
-		  if((selectplace!=bigsize+1)&&(selectplace))
-		  	{
-		  	rt=dpreadcost(D[x].continuousread,(*Choosetoreadselection)[mid].readturn,D[x].ReadytoRead[asknum].readturn,false);
-		  	rq=dpreadcost(D[x].continuousread,D[x].ReadytoRead[asknum].readturn,(*Choosetoreadselection)[mid+1].readturn,false);
-		  	origin=dpreadcost(D[x].continuousread,(*Choosetoreadselection)[mid].readturn,(*Choosetoreadselection)[mid+1].readturn,false);
-		    }
-		    else
-		    {
-		    	if(!selectplace)
-		    	{
-		    		rt=dpreadcost(D[x].continuousread,-1,D[x].ReadytoRead[asknum].readturn,false);
-				}
-				else
-		    	{
-                    rt=dpreadcost(D[x].continuousread,(*Choosetoreadselection)[bigsize].readturn,D[x].ReadytoRead[asknum].readturn,false);
-				}
-				rq.re=0;
-		    	origin.re=0;
-			}
-		  if((*totalcost)+rt.re+rq.re-origin.re<=G)
-		  {
-		  	(*totalcost)+=rt.re+rq.re-origin.re;
-			if((!(*Choosetoreadselection).empty())&&(selectplace!=(*Choosetoreadselection).size()))
-			{
-				(*Choosetoreadselection).push_back(D[x].ReadytoRead[asknum]);
-			}
-			else
-		  	{
-			  (*Choosetoreadselection).insert((*Choosetoreadselection).begin()+selectplace,D[x].ReadytoRead[asknum]);
-		    }
-		  	//dp[G].action.insert(rt.st+rf.st,dp[G].action.begin()+D[x].curdiskpointer);
-		  	return true;
-		  }
-		  return false;
-		};
-		/*for(long int i=0;i<std::min(selecttoreadsize,total);i++)
-		{
-			//Decisiontoread.push(D[x].ReadytoRead[i]);
-			selectid++;
-		}*/
-		/*bool addtopq=false;
-		int visitbutnotchoose=0;
-		read rg;
-			while((totalcost<=G)&&(selectid<total))//how to end?
-			{
-				//rg=Decisiontoread.top();
-				//Decisiontoread.pop();
-				rg=D[x].ReadytoRead[selectid];
-				selectid++;
-				//sort in arrange->to minimize the cost so as to ;
-				//returnstate rt=dpreadcost(lastread,rg.);
-				if(!cs[rg.caseid].read)
-				{
-					continue;
-				}
-				if(!checkisplacable(&Choosetoreadselection,&totalcost,rg.readturn))
-				{
-					rg.deltoaccept++;
-					//SelectoDecide.push(rd);
-					visitbutnotchoose++;
-				}
-				/*if(visitbutnotchoose>=SelecttoDecide.size())//add to priority queue
-				{
-					addtopq=true;
-					if(selectid==total)
-					{
-						break;
-					}
-					for(long int i=selectid;i<std::min(selectid+selecttoreadsize,total);i++)
-					{
-						SelecttoDecide.push_back(D[x].ReadytoRead[i]);
-					}
-					selectid+=selecttoreadsize;
-					addtopq=false;
-				}*/
-			/*}
-			long int choosereadsize=Choosetoreadselection.size();
-			for(long int i=0;i<choosereadsize;i++)
-			{
-				returnstate rt=dpreadcost(lastreadcontinuous,lastread,Choosetoreadselection[i].readturn,true);
-				dp[G].action+=rt.st;
-				char checkhead=rt.st[0];
-			if(checkhead=='r')
-			{
-				lastreadcontinuous+=D[x].ReadytoRead[i].Size+rt.distance;
-			}
-			else
-			{
-				lastreadcontinuous=D[x].ReadytoRead[i].Size;
-			}
-				lastread=Choosetoreadselection[i].readturn;
-				cs[Choosetoreadselection[i].caseid].read=false;
-			}*/
 		D[x].continuousread=lastreadcontinuous;
 		//dp[2*G]-answer
 		//activation thought by Deepseek LLM-state compression dp
 		int k=0;
 		long int s=dp[G].action.length();
-		/*if(checkcost(dp[G].action,D[x].continuousread)>G)//debug
-		{
-			std::cout<<checkcost(dp[G].action,D[x].continuousread)<<" "<<G<<"\n";
-			std::cout<<"Disk "<<x<<" overflows its total cost."<<"\n";
-			exit(-1);
-		}*/
 		//std::cout<<"Check:"<<Choosetoreadselection.size()<<std::endl;
 		//Choosetoreadselection.clear();
 		if(s||(!D[x].ReadytoRead.size()))
@@ -706,88 +513,6 @@ class OBS
 		//std::cout<<x<<" "<<getDiskIndex(x).curdiskpointer<<"\n";
 		//printf("%s",dp[G].action);
 		std::cout<<dp[G].action<<"#\n";
-		//printf("#\n");
-		/*for(long int i=0;i<=s;i++)
-		{
-			if(i==s)
-			{
-				//std::cout<<"#";
-				//printf("#");
-			}
-			else
-			{
-			//std::cout<<dp[G].action[i];
-			}
-		}*/
-		//std::cout<<"\n";//use in debug
-		/*long int g=G;
-		/*while(g>0)
-		{
-			if(dp[g].lastread==dp[g-1].lastread)
-			{
-				g--;
-			}
-			else
-			{
-				getCaseIndex(D[x].ReadytoRead[dp[g].lastread].caseid).read=false;
-				g-=dp[g].lastcost;
-			}
-		}*/
-		D[x].lastmove=dp[G].action[s-1];
-		long int l=s-1;
-		/*if(s&&dp[G].action[s-1]=='r')
-		{
-			/*while(dp[G].action[l]=='r')
-			{
-				l--;
-			}*/
-			//D[x].continuousread=s-l;
-			/*D[x].continuousread=lastreadcontinuous;
-		}
-		else
-		{
-			if(s){D[x].continuousread=0;}
-		}//else not change
-		//long int y=dp[G].state.size();
-		/*for(long int i=0;i<x;i++)
-		{
-			dp[G].state[i]
-		}*/
-		/*while(k<total)
-		{
-			//if not read,push into unr
-			if((dp[G].state>>k)%2==1)
-			{
-				getCaseIndex(D[x].ReadytoRead[k].caseid).read=false;
-			}
-			k++;
-		}*/
-		//long int hasread=dp[G].state.size();
-		/*for(long int i=0;i<hasread;i++)
-		{
-			if(D[x].ReadytoRead[dp[G].state[i]].iscontinuous)
-			{
-				bool checkreallyread=true;
-				/*for(long int i=0;i<cs[D[x].ReadytoRead[dp[G].state[i]].caseid].Size;i++)
-				{
-					if(dp[G].state[((D[x].ReadytoRead[dp[G].state[i]].start+i)<getDiskIndex(x).curdiskpointer)*V
-					+D[x].ReadytoRead[dp[G].state[i]].start+i-getDiskIndex(x).curdiskpointer]!='r')
-					{
-						checkreallyread=false;
-						break;
-					}
-				}*/
-				/*if(checkreallyread)
-				{
-				getCaseIndex(D[x].ReadytoRead[dp[G].state[i]].caseid).read=false;
-			    }
-			}
-			/*else
-			{
-	            getCaseIndex(D[x].ReadytoRead[dp[G].state[i]].caseid).loc[notcontinuouslocid].saveplace[notcontinuousturn].readpiece=true;
-	            getCaseIndex(D[x].ReadytoRead[dp[G].state[i]].caseid)
-			}*/
-		//}
 		getDiskIndex(x).curdiskpointer=(getDiskIndex(x).curdiskpointer+s)%V;//move
 		//deal with those who are in pieces.
 		}
